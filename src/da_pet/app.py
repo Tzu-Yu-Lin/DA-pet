@@ -21,7 +21,7 @@ class DesktopPetApp:
         self.event_queue: SimpleQueue[int] = SimpleQueue()
         self.listener = GlobalClickListener(self.event_queue.put_nowait)
         self._closed = False
-        self.window = PetWindow(self.root, on_close=self.shutdown)
+        self.window = PetWindow(self.root)
         self.window.refresh(self.state)
 
         self.root.protocol("WM_DELETE_WINDOW", self.shutdown)

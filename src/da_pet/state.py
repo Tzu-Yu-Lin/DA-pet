@@ -7,8 +7,10 @@ LEVEL_BASE_EXP = 10
 LEVEL_STEP_EXP = 5
 EVOLUTION_STAGES = (
     (1, "Seed"),
-    (3, "Bud"),
-    (5, "Bloom"),
+    (5, "Sprout"),
+    (10, "Blaze"),
+    (15, "Knight"),
+    (20, "Myth"),
 )
 
 
