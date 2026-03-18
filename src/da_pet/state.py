@@ -35,14 +35,15 @@ class PetState:
     next_level_exp: int = exp_needed_for_level(1)
     form: str = form_for_level(1)
 
-    def register_click(self, count: int = 1, exp_per_click: int = 1) -> bool:
-        if count <= 0 or exp_per_click <= 0:
+    def gain_exp(self, amount: int, click_count: int = 0) -> bool:
+        if amount <= 0:
             return False
 
-        gained_exp = count * exp_per_click
-        self.total_clicks += count
-        self.total_exp += gained_exp
-        self.current_exp += gained_exp
+        if click_count > 0:
+            self.total_clicks += click_count
+
+        self.total_exp += amount
+        self.current_exp += amount
 
         leveled_up = False
         while self.current_exp >= self.next_level_exp:
@@ -53,6 +54,12 @@ class PetState:
 
         self.form = form_for_level(self.level)
         return leveled_up
+
+    def register_click(self, count: int = 1, exp_per_click: int = 1) -> bool:
+        if count <= 0 or exp_per_click <= 0:
+            return False
+
+        return self.gain_exp(count * exp_per_click, click_count=count)
 
     @property
     def progress_ratio(self) -> float:

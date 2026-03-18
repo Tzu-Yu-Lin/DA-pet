@@ -4,7 +4,7 @@ from pathlib import Path
 from queue import Empty, SimpleQueue
 import tkinter as tk
 
-from da_pet.listener import GlobalClickListener
+from da_pet.listener import GlobalInputListener
 from da_pet.pet_window import PetWindow
 from da_pet.storage import load_state, save_state
 
@@ -18,10 +18,13 @@ class DesktopPetApp:
     def __init__(self) -> None:
         self.root = tk.Tk()
         self.state = load_state(STATE_FILE)
-        self.event_queue: SimpleQueue[int] = SimpleQueue()
-        self.listener = GlobalClickListener(self.event_queue.put_nowait)
+        self.event_queue: SimpleQueue[tuple[str, int]] = SimpleQueue()
+        self.listener = GlobalInputListener(
+            on_click=lambda count: self.event_queue.put_nowait(("click", count)),
+            on_key_press=lambda: self.event_queue.put_nowait(("key", 1)),
+        )
         self._closed = False
-        self.window = PetWindow(self.root)
+        self.window = PetWindow(self.root, on_feed=self._handle_feed)
         self.window.refresh(self.state)
 
         self.root.protocol("WM_DELETE_WINDOW", self.shutdown)
@@ -33,18 +36,36 @@ class DesktopPetApp:
             return
 
         processed_clicks = 0
+        processed_keys = 0
         while True:
             try:
-                processed_clicks += self.event_queue.get_nowait()
+                event_type, amount = self.event_queue.get_nowait()
             except Empty:
                 break
+            else:
+                if event_type == "click":
+                    processed_clicks += amount
+                elif event_type == "key":
+                    processed_keys += amount
 
         if processed_clicks:
             self.state.register_click(count=processed_clicks)
-            save_state(STATE_FILE, self.state)
-            self.window.refresh(self.state)
+
+        if processed_keys:
+            self.window.handle_key_presses(processed_keys)
+
+        if processed_clicks:
+            self._sync_state()
 
         self.root.after(QUEUE_POLL_MS, self._process_events)
+
+    def _handle_feed(self, exp_amount: int) -> None:
+        self.state.gain_exp(exp_amount)
+        self._sync_state()
+
+    def _sync_state(self) -> None:
+        save_state(STATE_FILE, self.state)
+        self.window.refresh(self.state)
 
     def run(self) -> None:
         self.listener.start()
