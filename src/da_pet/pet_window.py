@@ -24,6 +24,12 @@ FORM_IMAGES = {
     "Knight": "DA04.png",
     "Myth": "DA05.png",
 }
+BRANCH_IMAGES = {
+    "game": "DAGame01.png",
+    "engineer": "DACode01.png",
+    "office": "DAwork01.png",
+    "rage": "DAAnger01.png",
+}
 FOOD_IMAGE = "food01.png"
 FOOD_EXP_VALUES = (6, 9, 12)
 DROP_CHANCE = 0.03
@@ -164,8 +170,7 @@ class PetWindow:
         left, top, right, bottom = self._pet_bounds()
         return left <= x <= right and top <= y <= bottom
 
-    def _image_for_form(self, form: str) -> tk.PhotoImage | None:
-        file_name = FORM_IMAGES.get(form, FORM_IMAGES["Seed"])
+    def _cached_image(self, file_name: str, shrink: int) -> tk.PhotoImage | None:
         if file_name in self._image_cache:
             return self._image_cache[file_name]
 
@@ -173,21 +178,18 @@ class PetWindow:
         if not file_path.exists():
             return None
 
-        image = tk.PhotoImage(file=str(file_path)).subsample(12, 12)
+        image = tk.PhotoImage(file=str(file_path)).subsample(shrink, shrink)
         self._image_cache[file_name] = image
         return image
 
+    def _image_for_state(self, state: PetState) -> tk.PhotoImage | None:
+        if state.branch in BRANCH_IMAGES:
+            return self._cached_image(BRANCH_IMAGES[state.branch], 12)
+
+        return self._cached_image(FORM_IMAGES.get(state.form, FORM_IMAGES["Seed"]), 12)
+
     def _food_image(self) -> tk.PhotoImage | None:
-        if FOOD_IMAGE in self._image_cache:
-            return self._image_cache[FOOD_IMAGE]
-
-        file_path = IMAGE_DIR / FOOD_IMAGE
-        if not file_path.exists():
-            return None
-
-        image = tk.PhotoImage(file=str(file_path)).subsample(28, 28)
-        self._image_cache[FOOD_IMAGE] = image
-        return image
+        return self._cached_image(FOOD_IMAGE, 28)
 
     def handle_key_presses(self, count: int) -> None:
         spawned = False
@@ -237,7 +239,7 @@ class PetWindow:
             self._draw_food(self._dragging_food, self._drag_pos[0], self._drag_pos[1], 13)
 
     def _draw_pet(self, state: PetState) -> None:
-        image = self._image_for_form(state.form)
+        image = self._image_for_state(state)
         if image is not None:
             self.canvas.create_image(self._pet_center_x(), 0, image=image, anchor="n")
         else:

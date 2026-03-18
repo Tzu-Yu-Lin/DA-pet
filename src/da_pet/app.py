@@ -18,10 +18,10 @@ class DesktopPetApp:
     def __init__(self) -> None:
         self.root = tk.Tk()
         self.state = load_state(STATE_FILE)
-        self.event_queue: SimpleQueue[tuple[str, int]] = SimpleQueue()
+        self.event_queue: SimpleQueue[tuple[str, object]] = SimpleQueue()
         self.listener = GlobalInputListener(
             on_click=lambda count: self.event_queue.put_nowait(("click", count)),
-            on_key_press=lambda: self.event_queue.put_nowait(("key", 1)),
+            on_key_press=lambda key_name: self.event_queue.put_nowait(("key", key_name)),
         )
         self._closed = False
         self.window = PetWindow(self.root, on_feed=self._handle_feed)
@@ -39,14 +39,16 @@ class DesktopPetApp:
         processed_keys = 0
         while True:
             try:
-                event_type, amount = self.event_queue.get_nowait()
+                event_type, payload = self.event_queue.get_nowait()
             except Empty:
                 break
             else:
                 if event_type == "click":
-                    processed_clicks += amount
+                    processed_clicks += int(payload)
                 elif event_type == "key":
-                    processed_keys += amount
+                    processed_keys += 1
+                    if isinstance(payload, str):
+                        self.state.register_key(payload)
 
         if processed_clicks:
             self.state.register_click(count=processed_clicks)
@@ -54,7 +56,7 @@ class DesktopPetApp:
         if processed_keys:
             self.window.handle_key_presses(processed_keys)
 
-        if processed_clicks:
+        if processed_clicks or processed_keys:
             self._sync_state()
 
         self.root.after(QUEUE_POLL_MS, self._process_events)

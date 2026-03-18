@@ -9,7 +9,7 @@ class GlobalInputListener:
     def __init__(
         self,
         on_click: Callable[[int], None],
-        on_key_press: Callable[[], None],
+        on_key_press: Callable[[str | None], None],
     ) -> None:
         self._on_click = on_click
         self._on_key_press = on_key_press
@@ -21,9 +21,31 @@ class GlobalInputListener:
         if pressed:
             self._on_click(1)
 
+    def _normalize_key(self, key: keyboard.Key | keyboard.KeyCode) -> str | None:
+        if isinstance(key, keyboard.KeyCode) and key.char:
+            return key.char.lower()
+
+        special_keys = {
+            keyboard.Key.space: "space",
+            keyboard.Key.backspace: "backspace",
+            keyboard.Key.enter: "enter",
+            keyboard.Key.tab: "tab",
+            keyboard.Key.alt: "alt",
+            keyboard.Key.alt_l: "alt",
+            keyboard.Key.alt_r: "alt",
+            keyboard.Key.alt_gr: "alt",
+            keyboard.Key.ctrl: "ctrl",
+            keyboard.Key.ctrl_l: "ctrl",
+            keyboard.Key.ctrl_r: "ctrl",
+            keyboard.Key.up: "up",
+            keyboard.Key.down: "down",
+            keyboard.Key.left: "left",
+            keyboard.Key.right: "right",
+        }
+        return special_keys.get(key)
+
     def _handle_key_press(self, key: keyboard.Key | keyboard.KeyCode) -> None:
-        del key
-        self._on_key_press()
+        self._on_key_press(self._normalize_key(key))
 
     def start(self) -> None:
         if self._mouse_listener is None:
