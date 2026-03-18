@@ -48,7 +48,7 @@ DA-pet/
 4. 建立虚拟环境：
 
 ```powershell
-py -m venv .venv
+C:\Users\jimmy\AppData\Local\Programs\Python\Python313\python.exe -m venv .venv
 ```
 
 5. 启动虚拟环境：
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 7. 启动桌面宠物：
 
 ```powershell
-py run.py
+.venv\Scripts\python.exe run.py
 ```
 
 ## 操作说明

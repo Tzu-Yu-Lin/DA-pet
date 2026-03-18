@@ -55,8 +55,10 @@ class PetWindow:
     def __init__(self, root: tk.Tk, on_close: Callable[[], None]) -> None:
         self.root = root
         self.on_close = on_close
-        self.width = 220
-        self.height = 240
+        self.width = 80
+        self.height = 60
+        self.canvas_width = 76
+        self.canvas_height = 56
         self._build_ui()
         self._position_bottom_right()
 
@@ -70,88 +72,24 @@ class PetWindow:
         self.container = tk.Frame(
             self.root,
             bg=CARD_BG,
-            bd=2,
+            bd=1,
             relief="solid",
             highlightbackground="#d5b27a",
             highlightcolor="#d5b27a",
             highlightthickness=0,
-            padx=10,
-            pady=8,
+            padx=1,
+            pady=1,
         )
         self.container.pack(fill="both", expand=True)
 
-        header = tk.Frame(self.container, bg=CARD_BG)
-        header.pack(fill="x")
-
-        self.title_label = tk.Label(
-            header,
-            text="DA-pet",
-            font=("Microsoft JhengHei UI", 11, "bold"),
-            bg=CARD_BG,
-            fg=TEXT_DARK,
-        )
-        self.title_label.pack(side="left")
-
-        self.close_button = tk.Button(
-            header,
-            text="X",
-            command=self.on_close,
-            font=("Segoe UI", 8, "bold"),
-            bg="#f7d9d0",
-            fg=TEXT_DARK,
-            bd=0,
-            padx=6,
-            pady=2,
-            activebackground="#efc6ba",
-            activeforeground=TEXT_DARK,
-            cursor="hand2",
-        )
-        self.close_button.pack(side="right")
-
         self.canvas = tk.Canvas(
             self.container,
-            width=190,
-            height=110,
+            width=self.canvas_width,
+            height=self.canvas_height,
             bg=CARD_BG,
             highlightthickness=0,
         )
-        self.canvas.pack(pady=(6, 4))
-
-        self.level_label = tk.Label(
-            self.container,
-            text="Lv.1  Seed",
-            font=("Microsoft JhengHei UI", 12, "bold"),
-            bg=CARD_BG,
-            fg=TEXT_DARK,
-        )
-        self.level_label.pack(anchor="w")
-
-        self.exp_label = tk.Label(
-            self.container,
-            text="EXP 0 / 10",
-            font=("Segoe UI", 10),
-            bg=CARD_BG,
-            fg=TEXT_SOFT,
-        )
-        self.exp_label.pack(anchor="w", pady=(2, 4))
-
-        self.progress_canvas = tk.Canvas(
-            self.container,
-            width=190,
-            height=16,
-            bg=CARD_BG,
-            highlightthickness=0,
-        )
-        self.progress_canvas.pack()
-
-        self.stats_label = tk.Label(
-            self.container,
-            text="Clicks: 0  Total EXP: 0",
-            font=("Segoe UI", 9),
-            bg=CARD_BG,
-            fg=TEXT_SOFT,
-        )
-        self.stats_label.pack(anchor="w", pady=(6, 0))
+        self.canvas.pack(fill="both", expand=True)
 
     def _position_bottom_right(self) -> None:
         self.root.update_idletasks()
@@ -170,120 +108,129 @@ class PetWindow:
         self.root.geometry(f"{self.width}x{self.height}+{x}+{y}")
 
     def refresh(self, state: PetState) -> None:
-        self.level_label.config(text=f"Lv.{state.level}  {state.form}")
-        self.exp_label.config(text=f"EXP {state.current_exp} / {state.next_level_exp}")
-        self.stats_label.config(
-            text=f"Clicks: {state.total_clicks}  Total EXP: {state.total_exp}"
-        )
-        self._draw_progress_bar(state.progress_ratio)
         self._draw_pet(state)
-
-    def _draw_progress_bar(self, progress_ratio: float) -> None:
-        self.progress_canvas.delete("all")
-        self.progress_canvas.create_rectangle(
-            0,
-            2,
-            190,
-            14,
-            fill=BAR_BG,
-            outline="",
-        )
-        self.progress_canvas.create_rectangle(
-            0,
-            2,
-            190 * progress_ratio,
-            14,
-            fill=BAR_FILL,
-            outline="",
-        )
 
     def _draw_pet(self, state: PetState) -> None:
         style = FORM_STYLES.get(state.form, FORM_STYLES["Seed"])
         self.canvas.delete("all")
+        scale_x = self.canvas_width / 190
+        scale_y = self.canvas_height / 110
 
-        self.canvas.create_oval(42, 78, 150, 102, fill="#ead2a2", outline="")
+        def sx(value: float) -> float:
+            return value * scale_x
+
+        def sy(value: float) -> float:
+            return value * scale_y
+
+        self.canvas.create_oval(sx(42), sy(78), sx(150), sy(102), fill="#ead2a2", outline="")
         self.canvas.create_oval(
-            48,
-            18,
-            144,
-            96,
+            sx(48),
+            sy(18),
+            sx(144),
+            sy(96),
             fill=style["body"],
             outline=style["outline"],
-            width=3,
+            width=2,
         )
 
         if state.form == "Seed":
             self.canvas.create_polygon(
-                92,
-                10,
-                78,
-                34,
-                106,
-                30,
+                sx(92),
+                sy(10),
+                sx(78),
+                sy(34),
+                sx(106),
+                sy(30),
                 fill=style["accent"],
                 outline=style["outline"],
-                width=2,
+                width=1,
             )
         elif state.form == "Bud":
             self.canvas.create_oval(
-                78,
-                4,
-                112,
-                34,
+                sx(78),
+                sy(4),
+                sx(112),
+                sy(34),
                 fill=style["accent"],
                 outline=style["outline"],
-                width=2,
+                width=1,
             )
-            self.canvas.create_line(95, 34, 95, 22, fill=style["outline"], width=2)
+            self.canvas.create_line(
+                sx(95), sy(34), sx(95), sy(22), fill=style["outline"], width=1
+            )
         else:
             self.canvas.create_oval(
-                70,
-                2,
-                92,
-                26,
+                sx(70),
+                sy(2),
+                sx(92),
+                sy(26),
                 fill=style["accent"],
                 outline=style["outline"],
-                width=2,
+                width=1,
             )
             self.canvas.create_oval(
-                98,
-                2,
-                120,
-                26,
+                sx(98),
+                sy(2),
+                sx(120),
+                sy(26),
                 fill=style["accent"],
                 outline=style["outline"],
-                width=2,
+                width=1,
             )
             self.canvas.create_oval(
-                84,
-                10,
-                106,
-                32,
+                sx(84),
+                sy(10),
+                sx(106),
+                sy(32),
                 fill=style["accent"],
                 outline=style["outline"],
-                width=2,
+                width=1,
             )
 
-        self.canvas.create_oval(74, 48, 82, 56, fill=style["outline"], outline="")
-        self.canvas.create_oval(108, 48, 116, 56, fill=style["outline"], outline="")
-        self.canvas.create_oval(62, 58, 72, 68, fill=style["cheek"], outline="")
-        self.canvas.create_oval(118, 58, 128, 68, fill=style["cheek"], outline="")
+        self.canvas.create_oval(sx(74), sy(48), sx(82), sy(56), fill=style["outline"], outline="")
+        self.canvas.create_oval(sx(108), sy(48), sx(116), sy(56), fill=style["outline"], outline="")
+        self.canvas.create_oval(sx(62), sy(58), sx(72), sy(68), fill=style["cheek"], outline="")
+        self.canvas.create_oval(sx(118), sy(58), sx(128), sy(68), fill=style["cheek"], outline="")
         self.canvas.create_arc(
-            82,
-            58,
-            108,
-            74,
+            sx(82),
+            sy(58),
+            sx(108),
+            sy(74),
             start=200,
             extent=140,
             style="arc",
-            width=2,
+            width=1,
             outline=style["outline"],
         )
 
+        self.canvas.create_rectangle(
+            sx(2),
+            sy(2),
+            sx(30),
+            sy(14),
+            fill="#fff8e8",
+            outline="",
+        )
         self.canvas.create_text(
-            158,
-            18,
-            text="+1 EXP",
+            sx(16),
+            sy(8),
+            text=f"Lv{state.level}",
             fill=TEXT_DARK,
-            font=("Segoe UI", 10, "bold"),
+            font=("Segoe UI", 7, "bold"),
+        )
+        self.canvas.create_rectangle(
+            sx(4),
+            sy(96),
+            sx(186),
+            sy(102),
+            fill=BAR_BG,
+            outline="",
+        )
+        self.canvas.create_rectangle(
+            sx(4),
+            sy(96),
+            sx(4 + (182 * state.progress_ratio)),
+            sy(102),
+            fill=BAR_FILL,
+            outline="",
         )
