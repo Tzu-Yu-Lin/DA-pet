@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-LEVEL_BASE_EXP = 9
-LEVEL_STEP_EXP = 4
+LEVEL_BASE_EXP = 24
+LEVEL_STEP_EXP = 12
 BRANCH_UNLOCK_LEVEL = 20
 EVOLUTION_STAGES = (
     (1, "Seed"),

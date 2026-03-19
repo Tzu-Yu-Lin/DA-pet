@@ -51,10 +51,13 @@ class DesktopPetApp:
                         self.state.register_key(payload)
 
         if processed_clicks:
-            self.state.register_click(count=processed_clicks)
+            self.state.total_clicks += processed_clicks
 
         if processed_keys:
-            self.window.handle_key_presses(processed_keys)
+            self.state.gain_exp(processed_keys)
+
+        if processed_clicks:
+            self.window.handle_food_rolls(processed_clicks)
 
         if processed_clicks or processed_keys:
             self._sync_state()

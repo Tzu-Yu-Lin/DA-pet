@@ -32,7 +32,7 @@ BRANCH_IMAGES = {
 }
 FOOD_IMAGE = "food01.png"
 FOOD_EXP_VALUES = (6, 9, 12)
-DROP_CHANCE = 0.03
+DROP_CHANCE = 0.05
 DROP_STEP = 0.18
 FLOAT_LIFE = 18
 SLOT_COUNT = 4
@@ -191,7 +191,7 @@ class PetWindow:
     def _food_image(self) -> tk.PhotoImage | None:
         return self._cached_image(FOOD_IMAGE, 28)
 
-    def handle_key_presses(self, count: int) -> None:
+    def handle_food_rolls(self, count: int) -> None:
         spawned = False
         for _ in range(count):
             spawned = self._maybe_drop_food() or spawned
