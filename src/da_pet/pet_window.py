@@ -21,14 +21,11 @@ FORM_IMAGES = {
     "Seed": "DA01.png",
     "Sprout": "DA02.png",
     "Blaze": "DA03.png",
-    "Knight": "DA04.png",
-    "Myth": "DA05.png",
 }
 BRANCH_IMAGES = {
-    "game": "DAGame01.png",
-    "engineer": "DACode01.png",
-    "office": "DAwork01.png",
-    "rage": "DAAnger01.png",
+    "fire": ("DAf01.png", "DAf02.png", "DAf03.png"),
+    "water": ("DAw01.png", "DAw02.png", "DAw03.png"),
+    "earth": ("DAg01.png", "DAg02.png", "DAg03.png"),
 }
 FOOD_IMAGE = "food01.png"
 FOOD_EXP_VALUES = (6, 9, 12)
@@ -182,9 +179,21 @@ class PetWindow:
         self._image_cache[file_name] = image
         return image
 
+    def _branch_image_name(self, state: PetState) -> str | None:
+        image_names = BRANCH_IMAGES.get(state.branch)
+        if image_names is None:
+            return None
+
+        if state.level >= 25:
+            return image_names[2]
+        if state.level >= 20:
+            return image_names[1]
+        return image_names[0]
+
     def _image_for_state(self, state: PetState) -> tk.PhotoImage | None:
-        if state.branch in BRANCH_IMAGES:
-            return self._cached_image(BRANCH_IMAGES[state.branch], 12)
+        branch_image = self._branch_image_name(state)
+        if branch_image is not None:
+            return self._cached_image(branch_image, 12)
 
         return self._cached_image(FORM_IMAGES.get(state.form, FORM_IMAGES["Seed"]), 12)
 

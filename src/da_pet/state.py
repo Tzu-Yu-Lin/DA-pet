@@ -3,15 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-LEVEL_BASE_EXP = 24
-LEVEL_STEP_EXP = 12
-BRANCH_UNLOCK_LEVEL = 20
+LEVEL_BASE_EXP = 22
+LEVEL_STEP_EXP = 11
+BRANCH_UNLOCK_LEVEL = 15
 EVOLUTION_STAGES = (
     (1, "Seed"),
     (5, "Sprout"),
     (10, "Blaze"),
-    (15, "Knight"),
-    (20, "Myth"),
 )
 
 
@@ -27,25 +25,20 @@ def form_for_level(level: int) -> str:
     return current_form
 
 
-def branch_for_scores(level: int, game: int, engineer: int, office: int, rage: int) -> str:
+def branch_for_scores(level: int, fire: int, water: int, earth: int) -> str:
     if level < BRANCH_UNLOCK_LEVEL:
         return "base"
 
     scores = {
-        "game": game,
-        "engineer": engineer,
-        "office": office,
-        "rage": rage,
+        "fire": fire,
+        "water": water,
+        "earth": earth,
     }
     top_score = max(scores.values())
     if top_score <= 0:
         return "base"
 
-    # Hidden branch: only trigger when Backspace usage is clearly dominant.
-    if rage > max(game, engineer, office):
-        return "rage"
-
-    for branch_name in ("game", "engineer", "office"):
+    for branch_name in ("fire", "water", "earth"):
         if scores[branch_name] == top_score:
             return branch_name
 
@@ -61,19 +54,17 @@ class PetState:
     next_level_exp: int = exp_needed_for_level(1)
     form: str = form_for_level(1)
     branch: str = "base"
-    game_score: int = 0
-    engineer_score: int = 0
-    office_score: int = 0
-    rage_score: int = 0
+    fire_score: int = 0
+    water_score: int = 0
+    earth_score: int = 0
 
     def _refresh_progression(self) -> None:
         self.form = form_for_level(self.level)
         self.branch = branch_for_scores(
             self.level,
-            self.game_score,
-            self.engineer_score,
-            self.office_score,
-            self.rage_score,
+            self.fire_score,
+            self.water_score,
+            self.earth_score,
         )
 
     def gain_exp(self, amount: int, click_count: int = 0) -> bool:
@@ -97,14 +88,12 @@ class PetState:
         return leveled_up
 
     def register_key(self, key_name: str) -> None:
-        if key_name == "backspace":
-            self.rage_score += 1
-        elif key_name in {"w", "a", "s", "d"} or key_name.isdigit():
-            self.game_score += 1
-        elif key_name in {"{", "}", "(", ")", "[", "]", ";", "/", "\\", "=", "_"}:
-            self.engineer_score += 1
-        elif key_name in {"tab", "alt", "ctrl", "enter", "up", "down", "left", "right"}:
-            self.office_score += 1
+        if key_name in {"b", "q", "s", "u", "w"}:
+            self.water_score += 1
+        elif key_name in {"g", "j", "l", "o", "r"}:
+            self.fire_score += 1
+        elif key_name in {"c", "d", "m", "x"}:
+            self.earth_score += 1
 
         self._refresh_progression()
 
@@ -129,10 +118,9 @@ class PetState:
             "next_level_exp": self.next_level_exp,
             "form": self.form,
             "branch": self.branch,
-            "game_score": self.game_score,
-            "engineer_score": self.engineer_score,
-            "office_score": self.office_score,
-            "rage_score": self.rage_score,
+            "fire_score": self.fire_score,
+            "water_score": self.water_score,
+            "earth_score": self.earth_score,
         }
 
     @classmethod
@@ -151,10 +139,17 @@ class PetState:
             next_level_exp=int(data.get("next_level_exp", exp_needed_for_level(max(1, level)))),
             form=str(data.get("form", form_for_level(max(1, level)))),
             branch=str(data.get("branch", "base")),
-            game_score=max(0, int(data.get("game_score", 0))),
-            engineer_score=max(0, int(data.get("engineer_score", 0))),
-            office_score=max(0, int(data.get("office_score", 0))),
-            rage_score=max(0, int(data.get("rage_score", 0))),
+            fire_score=max(0, int(data.get("fire_score", data.get("game_score", 0)))),
+            water_score=max(0, int(data.get("water_score", data.get("engineer_score", 0)))),
+            earth_score=max(
+                0,
+                int(
+                    data.get(
+                        "earth_score",
+                        int(data.get("office_score", 0)) + int(data.get("rage_score", 0)),
+                    )
+                ),
+            ),
         )
         state.next_level_exp = max(1, state.next_level_exp)
         state._refresh_progression()
