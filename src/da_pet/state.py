@@ -6,6 +6,14 @@ from dataclasses import dataclass
 LEVEL_BASE_EXP = 22
 LEVEL_STEP_EXP = 11
 BRANCH_UNLOCK_LEVEL = 15
+ASPECT_UNLOCK_LEVEL = 30
+WATER_KEYS = {"b", "q", "s", "u", "w"}
+FIRE_KEYS = {"g", "j", "l", "o", "r"}
+EARTH_KEYS = {"c", "d", "m", "x"}
+DARK_KEYS = {"d", "a", "r", "k"}
+LIGHT_KEYS = {"l", "i", "g", "h"}
+BRANCH_NAMES = {"fire", "water", "earth"}
+ASPECT_NAMES = {"dark", "light"}
 EVOLUTION_STAGES = (
     (1, "Seed"),
     (5, "Sprout"),
@@ -45,6 +53,18 @@ def branch_for_scores(level: int, fire: int, water: int, earth: int) -> str:
     return "base"
 
 
+def aspect_for_scores(level: int, dark: int, light: int) -> str:
+    if level < ASPECT_UNLOCK_LEVEL:
+        return "base"
+
+    if dark <= 0 and light <= 0:
+        return "base"
+
+    if dark >= light:
+        return "dark"
+    return "light"
+
+
 @dataclass
 class PetState:
     total_clicks: int = 0
@@ -54,18 +74,28 @@ class PetState:
     next_level_exp: int = exp_needed_for_level(1)
     form: str = form_for_level(1)
     branch: str = "base"
+    aspect: str = "base"
     fire_score: int = 0
     water_score: int = 0
     earth_score: int = 0
+    dark_score: int = 0
+    light_score: int = 0
 
     def _refresh_progression(self) -> None:
         self.form = form_for_level(self.level)
-        self.branch = branch_for_scores(
-            self.level,
-            self.fire_score,
-            self.water_score,
-            self.earth_score,
-        )
+        if self.branch not in BRANCH_NAMES:
+            self.branch = branch_for_scores(
+                self.level,
+                self.fire_score,
+                self.water_score,
+                self.earth_score,
+            )
+        if self.aspect not in ASPECT_NAMES:
+            self.aspect = aspect_for_scores(
+                self.level,
+                self.dark_score,
+                self.light_score,
+            )
 
     def gain_exp(self, amount: int, click_count: int = 0) -> bool:
         if amount <= 0:
@@ -88,12 +118,18 @@ class PetState:
         return leveled_up
 
     def register_key(self, key_name: str) -> None:
-        if key_name in {"b", "q", "s", "u", "w"}:
+        if key_name in WATER_KEYS:
             self.water_score += 1
-        elif key_name in {"g", "j", "l", "o", "r"}:
+        elif key_name in FIRE_KEYS:
             self.fire_score += 1
-        elif key_name in {"c", "d", "m", "x"}:
+        elif key_name in EARTH_KEYS:
             self.earth_score += 1
+
+        if self.level >= BRANCH_UNLOCK_LEVEL:
+            if key_name in DARK_KEYS:
+                self.dark_score += 1
+            elif key_name in LIGHT_KEYS:
+                self.light_score += 1
 
         self._refresh_progression()
 
@@ -118,9 +154,12 @@ class PetState:
             "next_level_exp": self.next_level_exp,
             "form": self.form,
             "branch": self.branch,
+            "aspect": self.aspect,
             "fire_score": self.fire_score,
             "water_score": self.water_score,
             "earth_score": self.earth_score,
+            "dark_score": self.dark_score,
+            "light_score": self.light_score,
         }
 
     @classmethod
@@ -139,6 +178,7 @@ class PetState:
             next_level_exp=int(data.get("next_level_exp", exp_needed_for_level(max(1, level)))),
             form=str(data.get("form", form_for_level(max(1, level)))),
             branch=str(data.get("branch", "base")),
+            aspect=str(data.get("aspect", "base")),
             fire_score=max(0, int(data.get("fire_score", data.get("game_score", 0)))),
             water_score=max(0, int(data.get("water_score", data.get("engineer_score", 0)))),
             earth_score=max(
@@ -150,6 +190,8 @@ class PetState:
                     )
                 ),
             ),
+            dark_score=max(0, int(data.get("dark_score", 0))),
+            light_score=max(0, int(data.get("light_score", 0))),
         )
         state.next_level_exp = max(1, state.next_level_exp)
         state._refresh_progression()

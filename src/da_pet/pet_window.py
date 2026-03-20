@@ -27,6 +27,14 @@ BRANCH_IMAGES = {
     "water": ("DAw01.png", "DAw02.png", "DAw03.png"),
     "earth": ("DAg01.png", "DAg02.png", "DAg03.png"),
 }
+ASPECT_IMAGES = {
+    ("fire", "dark"): "DAfd01.png",
+    ("fire", "light"): "DAfl01.png",
+    ("water", "dark"): "DAwd01.png",
+    ("water", "light"): "DAwl01.png",
+    ("earth", "dark"): "DAgd01.png",
+    ("earth", "light"): "DAgl02.png",
+}
 FOOD_IMAGE = "food01.png"
 FOOD_EXP_VALUES = (6, 9, 12)
 DROP_CHANCE = 0.05
@@ -65,6 +73,7 @@ class PetWindow:
         self.height = 132
         self.status_height = 26
         self.pet_size = 86
+        self.pet_top = 30
         self._image_cache: dict[str, tk.PhotoImage] = {}
         self._foods: list[dict[str, object] | None] = [None] * SLOT_COUNT
         self._drop_effects: list[dict[str, object]] = []
@@ -136,7 +145,7 @@ class PetWindow:
     def _pet_bounds(self) -> tuple[float, float, float, float]:
         center_x = self._pet_center_x()
         half = self.pet_size / 2
-        return center_x - half, 6, center_x + half, 6 + self.pet_size
+        return center_x - half, self.pet_top, center_x + half, self.pet_top + self.pet_size
 
     def _slot_rect(self, index: int) -> tuple[int, int, int, int]:
         x0 = 12 + (index * 40)
@@ -191,6 +200,10 @@ class PetWindow:
         return image_names[0]
 
     def _image_for_state(self, state: PetState) -> tk.PhotoImage | None:
+        aspect_image = ASPECT_IMAGES.get((state.branch, state.aspect))
+        if aspect_image is not None:
+            return self._cached_image(aspect_image, 12)
+
         branch_image = self._branch_image_name(state)
         if branch_image is not None:
             return self._cached_image(branch_image, 12)
@@ -250,11 +263,11 @@ class PetWindow:
     def _draw_pet(self, state: PetState) -> None:
         image = self._image_for_state(state)
         if image is not None:
-            self.canvas.create_image(self._pet_center_x(), 0, image=image, anchor="n")
+            self.canvas.create_image(self._pet_center_x(), self.pet_top, image=image, anchor="n")
         else:
             self.canvas.create_text(
                 self._pet_center_x(),
-                40,
+                self.pet_top + 40,
                 text=f"Missing\n{state.form}",
                 fill=TEXT_DARK,
                 font=("Segoe UI", 10, "bold"),
