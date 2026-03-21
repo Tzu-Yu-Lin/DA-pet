@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
-LEVEL_BASE_EXP = 22
-LEVEL_STEP_EXP = 11
+LEVEL_BASE_EXP = 24
+LEVEL_STEP_EXP = 12
 BRANCH_UNLOCK_LEVEL = 15
 ASPECT_UNLOCK_LEVEL = 30
 WATER_KEYS = {"b", "q", "s", "u", "w"}
@@ -19,6 +19,7 @@ EVOLUTION_STAGES = (
     (5, "Sprout"),
     (10, "Blaze"),
 )
+OBJECT_IDS = ("ob01", "ob02", "ob03", "ob04", "ob05")
 
 
 def exp_needed_for_level(level: int) -> int:
@@ -80,6 +81,8 @@ class PetState:
     earth_score: int = 0
     dark_score: int = 0
     light_score: int = 0
+    discovered_objects: list[str] = field(default_factory=list)
+    fairy_achievement_shown: bool = False
 
     def _refresh_progression(self) -> None:
         self.form = form_for_level(self.level)
@@ -139,6 +142,19 @@ class PetState:
 
         return self.gain_exp(count * exp_per_click, click_count=count)
 
+    def has_object(self, object_id: str) -> bool:
+        return object_id in self.discovered_objects
+
+    def discover_object(self, object_id: str) -> bool:
+        if object_id not in OBJECT_IDS or object_id in self.discovered_objects:
+            return False
+
+        self.discovered_objects.append(object_id)
+        return True
+
+    def all_objects_found(self) -> bool:
+        return all(object_id in self.discovered_objects for object_id in OBJECT_IDS)
+
     @property
     def progress_ratio(self) -> float:
         if self.next_level_exp <= 0:
@@ -160,6 +176,12 @@ class PetState:
             "earth_score": self.earth_score,
             "dark_score": self.dark_score,
             "light_score": self.light_score,
+            "discovered_objects": [
+                object_id
+                for object_id in OBJECT_IDS
+                if object_id in self.discovered_objects
+            ],
+            "fairy_achievement_shown": self.fairy_achievement_shown,
         }
 
     @classmethod
@@ -169,13 +191,19 @@ class PetState:
 
         level = int(data.get("level", 1))
         current_exp = int(data.get("current_exp", 0))
+        raw_discovered = data.get("discovered_objects", [])
+        discovered_objects: list[str] = []
+        if isinstance(raw_discovered, list):
+            for object_id in OBJECT_IDS:
+                if object_id in raw_discovered:
+                    discovered_objects.append(object_id)
 
         state = cls(
             total_clicks=int(data.get("total_clicks", 0)),
             total_exp=int(data.get("total_exp", 0)),
             level=max(1, level),
             current_exp=max(0, current_exp),
-            next_level_exp=int(data.get("next_level_exp", exp_needed_for_level(max(1, level)))),
+            next_level_exp=exp_needed_for_level(max(1, level)),
             form=str(data.get("form", form_for_level(max(1, level)))),
             branch=str(data.get("branch", "base")),
             aspect=str(data.get("aspect", "base")),
@@ -192,6 +220,8 @@ class PetState:
             ),
             dark_score=max(0, int(data.get("dark_score", 0))),
             light_score=max(0, int(data.get("light_score", 0))),
+            discovered_objects=discovered_objects,
+            fairy_achievement_shown=bool(data.get("fairy_achievement_shown", False)),
         )
         state.next_level_exp = max(1, state.next_level_exp)
         state._refresh_progression()

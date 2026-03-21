@@ -8,7 +8,7 @@ from pynput import keyboard, mouse
 class GlobalInputListener:
     def __init__(
         self,
-        on_click: Callable[[int], None],
+        on_click: Callable[[int, int, int], None],
         on_key_press: Callable[[str | None], None],
     ) -> None:
         self._on_click = on_click
@@ -17,9 +17,9 @@ class GlobalInputListener:
         self._keyboard_listener: keyboard.Listener | None = None
 
     def _handle_click(self, x: int, y: int, button: mouse.Button, pressed: bool) -> None:
-        del x, y, button
+        del button
         if pressed:
-            self._on_click(1)
+            self._on_click(x, y, 1)
 
     def _normalize_key(self, key: keyboard.Key | keyboard.KeyCode) -> str | None:
         if isinstance(key, keyboard.KeyCode) and key.char:
